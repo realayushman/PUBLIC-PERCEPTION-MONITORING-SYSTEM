@@ -40,4 +40,5 @@ stages:
     - data/interim/train_processed.csv
     - data/interim/test_processed.csv
     - src/model/model_evaluation.py
-    
+    outs:
+    - experiment_info.json
