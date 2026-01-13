@@ -59,6 +59,7 @@ target/
 # DotEnv configuration
 .env
 
+
 # Database
 *.db
 *.rdb
@@ -87,3 +88,7 @@ target/
 
 # Mypy cache
 .mypy_cache/
+
+venv/
+.venv/
+env/
