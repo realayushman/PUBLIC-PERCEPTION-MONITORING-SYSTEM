@@ -92,3 +92,5 @@ target/
 venv/
 .venv/
 env/
+/lgbm_model.pkl
+/tfidf_vectorizer.pkl
