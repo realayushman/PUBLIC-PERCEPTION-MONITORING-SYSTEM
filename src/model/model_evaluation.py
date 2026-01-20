@@ -165,7 +165,7 @@ def main():
                 signature=signature,  # <--- Added for signature
                 input_example=input_example  # <--- Added input example
             )
-
+ 
             # Save model info
             model_path = "lgbm_model"
             save_model_info(run.info.run_id, model_path, 'experiment_info.json')
