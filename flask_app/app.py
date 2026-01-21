@@ -115,14 +115,9 @@ def predict():
         
         # Transform comments using the vectorizer
         transformed_comments = vectorizer.transform(preprocessed_comments)
-        
-        df = pd.DataFrame(
-             transformed_comments.toarray(),
-             columns=vectorizer.get_feature_names_out()
-        )
 
         # Make predictions
-        predictions = model.predict(df).tolist()  # Convert to list
+        predictions = model.predict(transformed_comments).tolist()  # Convert to list
         
         # Convert predictions to strings for consistency
         predictions = [str(pred) for pred in predictions]
