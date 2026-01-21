@@ -40,8 +40,6 @@ def preprocess_comment(comment):
         # Remove stopwords but retain important ones for sentiment analysis
         stop_words = set(stopwords.words('english')) - {'not', 'but', 'however', 'no', 'yet'}
         comment = ' '.join([word for word in comment.split() if word not in stop_words])
-
-        # Lemmatize the words
         lemmatizer = WordNetLemmatizer()
         comment = ' '.join([lemmatizer.lemmatize(word) for word in comment.split()])
 
@@ -53,7 +51,7 @@ def preprocess_comment(comment):
 # Load the model and vectorizer from the model registry and local storage
 def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
     # Set MLflow tracking URI to your server
-    mlflow.set_tracking_uri("http://56.228.1.208:8000/")  # Replace with your MLflow tracking URI
+    mlflow.set_tracking_uri("http://51.20.255.70:8000/")  # Replace with your MLflow tracking URI
     client = MlflowClient()
     model_uri = f"models:/{model_name}/{model_version}"
     model = mlflow.pyfunc.load_model(model_uri)
@@ -116,8 +114,15 @@ def predict():
         # Transform comments using the vectorizer
         transformed_comments = vectorizer.transform(preprocessed_comments)
 
+        df = pd.DataFrame(
+             transformed_comments.toarray(),
+             columns=vectorizer.get_feature_names_out()
+            )
+        
         # Make predictions
-        predictions = model.predict(transformed_comments).tolist()  # Convert to list
+        predictions = model.predict(
+            df
+        ).tolist()  # Convert to list
         
         # Convert predictions to strings for consistency
         predictions = [str(pred) for pred in predictions]
