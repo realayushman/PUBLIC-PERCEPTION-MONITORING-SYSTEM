@@ -14,7 +14,6 @@ from mlflow.tracking import MlflowClient
 import nltk
 nltk.download('stopwords')
 nltk.download('wordnet')
-# -------------------- App --------------------
 
 app = FastAPI()
 
@@ -27,7 +26,6 @@ def preprocess_comment(text: str) -> str:
     text = text.lower().strip()
     text = re.sub(r"\n", " ", text)
     text = re.sub(r"[^A-Za-z0-9\s!?.,]", "", text)
-
     return " ".join(
         LEMMATIZER.lemmatize(w)
         for w in text.split()
@@ -61,10 +59,20 @@ def predict(payload: PredictRequest):
         if not payload.comments:
             raise HTTPException(status_code=400, detail="No comments provided")
 
+        # Preprocess
         cleaned = [preprocess_comment(c) for c in payload.comments]
-        X = vectorizer.transform(cleaned)  # use sparse matrix directly
-        preds = model.predict(X)
+
+        # Transform and convert to dense array
+        X_sparse = vectorizer.transform(cleaned)
+        X_dense = X_sparse.toarray()  # crucial: MLflow expects dense array matching signature
+
+        # Convert to DataFrame to match the original feature names (optional but safer)
+        X_df = pd.DataFrame(X_dense, columns=FEATURES)
+
+        # Predict
+        preds = model.predict(X_df)
 
         return {"predictions": [int(p) for p in preds]}
     except Exception as e:
         return {"error": str(e)}
+
