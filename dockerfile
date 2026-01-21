@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libgomp1
 
 # Copy app code
-COPY flask_app/ /app/
+COPY fastapi/ /app/
 
 # Copy vectorizer
 COPY tfidf_vectorizer.pkl /app/tfidf_vectorizer.pkl
