@@ -11,6 +11,9 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from mlflow.tracking import MlflowClient
 
+import nltk
+nltk.download('stopwords')
+nltk.download('wordnet')
 # -------------------- App --------------------
 
 app = FastAPI()
@@ -54,15 +57,14 @@ class PredictRequest(BaseModel):
 
 @app.post("/predict")
 def predict(payload: PredictRequest):
-    if not payload.comments:
-        raise HTTPException(status_code=400, detail="No comments provided")
+    try:
+        if not payload.comments:
+            raise HTTPException(status_code=400, detail="No comments provided")
 
-    cleaned = [preprocess_comment(c) for c in payload.comments]
-    X = vectorizer.transform(cleaned)
+        cleaned = [preprocess_comment(c) for c in payload.comments]
+        X = vectorizer.transform(cleaned)  # use sparse matrix directly
+        preds = model.predict(X)
 
-    df = pd.DataFrame(X.toarray(), columns=FEATURES)
-    preds = model.predict(df)
-
-    return {
-        "predictions": [int(p) for p in preds]
-    }
+        return {"predictions": [int(p) for p in preds]}
+    except Exception as e:
+        return {"error": str(e)}
