@@ -56,24 +56,27 @@ class PredictRequest(BaseModel):
 @app.post("/predict")
 def predict(payload: PredictRequest):
     try:
-        if not payload.comments:
-            raise HTTPException(status_code=400, detail="No comments provided")
-
-        # Preprocess
+        # ... (Preprocess steps) ...
         cleaned = [preprocess_comment(c) for c in payload.comments]
 
+        # Transform to sparse
         X_sparse = vectorizer.transform(cleaned)
-        # crucial: MLflow expects dense array matching signature
+        
+        # Convert to DataFrame using the exact feature names from the vectorizer
+        X_df = pd.DataFrame(
+            X_sparse.toarray(), 
+            columns=vectorizer.get_feature_names_out()
+        )
+        
+        # *** CRITICAL FIX: Ensure all column names are clean and match the schema exactly ***
+        X_df.columns = X_df.columns.str.strip()
 
-        # Convert to DataFrame to match the original feature names (optional but safer)
-        X_df =  pd.DataFrame(
-                X_sparse.toarray(), 
-                columns=vectorizer.get_feature_names_out()
-               )
         # Predict
         preds = model.predict(X_df)
 
         return {"predictions": [int(p) for p in preds]}
     except Exception as e:
+        # Log the exact error for debugging
+        print(f"Prediction error: {e}")
         return {"error": str(e)}
 
