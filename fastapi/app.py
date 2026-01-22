@@ -2,7 +2,7 @@ import re
 import joblib
 import mlflow
 import pandas as pd
-
+import numpy as np
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
@@ -53,30 +53,31 @@ class PredictRequest(BaseModel):
 
 # -------------------- Endpoint --------------------
 
+
 @app.post("/predict")
 def predict(payload: PredictRequest):
     try:
-        # ... (Preprocess steps) ...
+        # ... (Preprocess and Transform steps) ...
         cleaned = [preprocess_comment(c) for c in payload.comments]
-
-        # Transform to sparse
         X_sparse = vectorizer.transform(cleaned)
         
-        # Convert to DataFrame using the exact feature names from the vectorizer
         X_df = pd.DataFrame(
             X_sparse.toarray(), 
             columns=vectorizer.get_feature_names_out()
         )
+        X_df.columns = X_df.columns.str.strip() # Keep this line for safety
+
+        # *** CRITICAL FIX: Explicitly cast all columns to exactly 'float64' (double) ***
+        for col in X_df.columns:
+            X_df[col] = X_df[col].astype(np.float64)
         
-        # *** CRITICAL FIX: Ensure all column names are clean and match the schema exactly ***
-        X_df.columns = X_df.columns.str.strip()
+        # Or, more concisely for all numeric columns:
+        # X_df = X_df.astype(np.float64)
+
 
         # Predict
         preds = model.predict(X_df)
 
         return {"predictions": [int(p) for p in preds]}
     except Exception as e:
-        # Log the exact error for debugging
-        print(f"Prediction error: {e}")
         return {"error": str(e)}
-
