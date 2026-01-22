@@ -62,13 +62,14 @@ def predict(payload: PredictRequest):
         # Preprocess
         cleaned = [preprocess_comment(c) for c in payload.comments]
 
-        # Transform and convert to dense array
         X_sparse = vectorizer.transform(cleaned)
-        X_dense = X_sparse.toarray()  # crucial: MLflow expects dense array matching signature
+        # crucial: MLflow expects dense array matching signature
 
         # Convert to DataFrame to match the original feature names (optional but safer)
-        X_df = pd.DataFrame(X_dense, columns=FEATURES)
-
+        X_df =  pd.DataFrame(
+                X_sparse.toarray(), 
+                columns=vectorizer.get_feature_names_out()
+               )
         # Predict
         preds = model.predict(X_df)
 
