@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from mlflow.tracking import MlflowClient
-
+import pandas as pd
 
 # -------------------- HARD-CODED CONFIG --------------------
 MLFLOW_TRACKING_URI = "http://16.16.58.154:8000"
@@ -101,21 +101,23 @@ class PredictResponse(BaseModel):
 
 
 # -------------------- ENDPOINT --------------------
+import pandas as pd
+
+import pandas as pd
+
 @app.post("/predict", response_model=PredictResponse)
 async def predict(payload: PredictRequest):
     comments = payload.comments
-
     if not comments:
         raise HTTPException(400, "No comments provided")
-
     if len(comments) > MAX_BATCH_SIZE:
         raise HTTPException(413, "Too many comments")
 
+    # Preprocess comments
     processed = []
     valid_indices = []
-
-    for i, comment in enumerate(comments):
-        p = preprocess_comment(comment)
+    for i, c in enumerate(comments):
+        p = preprocess_comment(c)
         if p:
             processed.append(p)
             valid_indices.append(i)
@@ -124,20 +126,18 @@ async def predict(payload: PredictRequest):
         raise HTTPException(400, "No valid comments after preprocessing")
 
     try:
-        features = vectorizer.transform(processed)
-        preds = model.predict(features)
+        # Transform features directly into sparse matrix
+        features = vectorizer.transform(processed)  # keeps it sparse
 
+        # Predict
+        preds = model.predict(features)
         if preds.ndim > 1:
             preds = preds.argmax(axis=1)
 
-        return PredictResponse(
-            predictions=preds.tolist(),
-            indices=valid_indices
-        )
+        return PredictResponse(predictions=preds.tolist(), indices=valid_indices)
 
     except Exception as e:
         raise HTTPException(500, f"Prediction failed: {str(e)}")
-
 
 # -------------------- LOCAL RUN --------------------
 if __name__ == "__main__":
