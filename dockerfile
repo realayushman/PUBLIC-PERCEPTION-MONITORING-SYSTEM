@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y libgomp1
 
 # Copy app code
-COPY fastapi/ /app/
+COPY api/ /app/
 
 # Copy vectorizer
 COPY tfidf_vectorizer.pkl /app/tfidf_vectorizer.pkl
