@@ -3,6 +3,7 @@ import pandas as pd
 import pickle
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import mlflow
+import numpy as np
 
 # Set your remote tracking URI
 mlflow.set_tracking_uri("http://16.16.58.154:8000/")
@@ -41,11 +42,16 @@ def test_model_performance(model_name, stage, holdout_data_path, vectorizer_path
         # Predict using the model
         y_pred_new = model.predict(X_holdout_tfidf_df)
 
+        if isinstance(y_pred_new, np.ndarray) and y_pred_new.ndim > 1:
+            y_pred_new = np.argmax(y_pred_new, axis=1)
+        # >>> FIX ENDS HERE <<<
+
         # Calculate performance metrics
         accuracy_new = accuracy_score(y_holdout, y_pred_new)
         precision_new = precision_score(y_holdout, y_pred_new, average='weighted', zero_division=1)
         recall_new = recall_score(y_holdout, y_pred_new, average='weighted', zero_division=1)
         f1_new = f1_score(y_holdout, y_pred_new, average='weighted', zero_division=1)
+
 
 
         # Define expected thresholds for the performance metrics
