@@ -5,49 +5,49 @@ stages:
     deps:
     - path: src/data/data_ingestion.py
       hash: md5
-      md5: ab8e0b58a3ac840af409429054d7180f
-      size: 4375
+      md5: 76102fa898f09ca7b64d8a4446a2a3c8
+      size: 4261
     params:
       params.yaml:
         data_ingestion.test_size: 0.2
     outs:
     - path: data/raw
       hash: md5
-      md5: 3be255d873b8cf9da1b258ac41cddd99.dir
-      size: 6911451
+      md5: 24f4057252ca05deb6ff5749745d198f.dir
+      size: 6874656
       nfiles: 2
   data_preprocessing:
     cmd: python src/data/data_preprocessing.py
     deps:
     - path: data/raw/test.csv
       hash: md5
-      md5: cf928f187cf0b59b30eb6300da1b93a0
-      size: 1346941
+      md5: 0c2ae57a000661036aff9aa7ade7987c
+      size: 1339581
     - path: data/raw/train.csv
       hash: md5
-      md5: 6aed60a23b45bdd9127451d8db649eae
-      size: 5564510
+      md5: 2aa7c9c07f8edf4ad1e4ad2181b52d31
+      size: 5535075
     - path: src/data/data_preprocessing.py
       hash: md5
-      md5: 9ab6be7834f53c147193b6275cdfeba6
-      size: 9047
+      md5: 5598c70ff650ff17a257ba2bcd627dec
+      size: 8822
     outs:
     - path: data/interim
       hash: md5
-      md5: 28829cfa39bebb727eea8a7559ad999a.dir
-      size: 5135616
+      md5: c2d3c843951f9a4348a198aaa9ae142e.dir
+      size: 5095677
       nfiles: 2
   model_building:
     cmd: python src/model/model_building.py
     deps:
     - path: data/interim/train_processed.csv
       hash: md5
-      md5: fb668e3a1ccfc5161910e913025a3316
-      size: 4134911
+      md5: 6a587007eaf8b35902706e5b79b5c705
+      size: 4102988
     - path: src/model/model_building.py
       hash: md5
-      md5: 7436a55c9201d12a7d748abcc9a849b5
-      size: 6690
+      md5: dcce6debe2436b0f3a4983074905d9fc
+      size: 6498
     params:
       params.yaml:
         model_building.bagging_fraction: 0.9879160686934951
@@ -68,48 +68,48 @@ stages:
     outs:
     - path: lgbm_model.pkl
       hash: md5
-      md5: 44d22da7ce4247954a447feb5df20105
-      size: 1466408
+      md5: 7a3b22a03cad403a3f1f4b0ea6a21c27
+      size: 1446455
     - path: tfidf_vectorizer.pkl
       hash: md5
-      md5: 0f3d588e5cda0649894e8b242bd8c13b
-      size: 111993
+      md5: 4795ce302deccb4e0cf8e68c567a7027
+      size: 111995
   model_evaluation:
     cmd: python src/model/model_evaluation.py
     deps:
     - path: data/interim/test_processed.csv
       hash: md5
-      md5: a2f99b59bddd8760bbc09440a6818d68
-      size: 1000705
+      md5: 7646e403fa81ec1e94ce748883d016ae
+      size: 992689
     - path: data/interim/train_processed.csv
       hash: md5
-      md5: fb668e3a1ccfc5161910e913025a3316
-      size: 4134911
+      md5: 6a587007eaf8b35902706e5b79b5c705
+      size: 4102988
     - path: lgbm_model.pkl
       hash: md5
-      md5: 44d22da7ce4247954a447feb5df20105
-      size: 1466408
+      md5: 7a3b22a03cad403a3f1f4b0ea6a21c27
+      size: 1446455
     - path: src/model/model_evaluation.py
       hash: md5
-      md5: 7009cb0981773587aa99da510e92ae4f
-      size: 7286
+      md5: 8709b3e182a1018a7bdd5ffcd30603d4
+      size: 7086
     - path: tfidf_vectorizer.pkl
       hash: md5
-      md5: 0f3d588e5cda0649894e8b242bd8c13b
-      size: 111993
+      md5: 4795ce302deccb4e0cf8e68c567a7027
+      size: 111995
     outs:
     - path: experiment_info.json
       hash: md5
-      md5: a7db1f63a4ced939ae26cc7cdf1c0c6d
-      size: 87
+      md5: e1f99fadc51137555554e9445c442c27
+      size: 84
   model_registration:
     cmd: python src/model/register_model.py
     deps:
     - path: experiment_info.json
       hash: md5
-      md5: a7db1f63a4ced939ae26cc7cdf1c0c6d
-      size: 87
+      md5: e1f99fadc51137555554e9445c442c27
+      size: 84
     - path: src/model/register_model.py
       hash: md5
-      md5: e623d5d61d0f9223cdf0675fb8b5794b
-      size: 2438
+      md5: 3570298015d9071fb67dab560955608f
+      size: 2364
