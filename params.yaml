@@ -3,7 +3,16 @@ data_ingestion:
 
 model_building:
   ngram_range: [1, 3]  
-  max_features: 10000
-  learning_rate: 0.0808
-  max_depth: 20
+  max_features: 3000
+
+  learning_rate: 0.18768717130505222
+  num_leaves: 148 
+  max_depth: 7 
   n_estimators: 367
+  min_data_in_leaf: 25 
+  lambda_l1: 0.24447042100329508 
+  lambda_l2: 3.4386754411301483 
+  min_gain_to_split: 0.9610860157784141 
+  feature_fraction: 0.8759899226632444 
+  bagging_fraction: 0.9879160686934951 
+  bagging_freq: 7

@@ -56,6 +56,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     """Preprocess the data by handling missing values, duplicates, and empty strings."""
     try:
         # Removing missing values
+        df = df.replace({-1:0, 0:1, 1:2})
         df.dropna(inplace=True)
         # Removing duplicates
         df.drop_duplicates(inplace=True)

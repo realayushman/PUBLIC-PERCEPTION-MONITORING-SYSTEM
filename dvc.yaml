@@ -28,6 +28,14 @@ stages:
     - model_building.learning_rate
     - model_building.max_depth
     - model_building.n_estimators
+    - model_building.min_data_in_leaf
+    - model_building.num_leaves
+    - model_building.lambda_l1
+    - model_building.lambda_l2
+    - model_building.min_gain_to_split
+    - model_building.feature_fraction
+    - model_building.bagging_fraction
+    - model_building.bagging_freq
     outs:
     - lgbm_model.pkl
     - tfidf_vectorizer.pkl
