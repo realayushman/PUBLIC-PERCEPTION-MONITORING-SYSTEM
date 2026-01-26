@@ -6,7 +6,7 @@ import mlflow
 import numpy as np
 
 # Set your remote tracking URI
-mlflow.set_tracking_uri("http://16.16.58.154:8000/")
+mlflow.set_tracking_uri("http://13.48.135.22:8000/")
 
 @pytest.mark.parametrize("model_name, stage, holdout_data_path, vectorizer_path", [
     ("yt_chrome_plugin_model", "staging", "data/interim/test_processed.csv", "tfidf_vectorizer.pkl"),  # Replace with your actual paths

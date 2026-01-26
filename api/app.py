@@ -13,7 +13,7 @@ from mlflow.tracking import MlflowClient
 import pandas as pd
 
 # -------------------- HARD-CODED CONFIG --------------------
-MLFLOW_TRACKING_URI = "http://16.16.58.154:8000"
+MLFLOW_TRACKING_URI = "http://13.48.135.22:8000/"
 MODEL_NAME = "yt_chrome_plugin_model"
 MAX_BATCH_SIZE = 1000
 
