@@ -154,7 +154,8 @@ def main():
             # Log model WITHOUT signature
             mlflow.sklearn.log_model(
                 model,
-                "lgbm_model"
+                "lgbm_model",
+                registered_model_name="yt_chrome_plugin_model"
             )
  
             # Save model info

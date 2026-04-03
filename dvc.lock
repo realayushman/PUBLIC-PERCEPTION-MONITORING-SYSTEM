@@ -5,49 +5,49 @@ stages:
     deps:
     - path: src/data/data_ingestion.py
       hash: md5
-      md5: a8e238f7c93022c738c5868b99bbd466
-      size: 3470
+      md5: 6de026df318a41b8abfadbeba0314333
+      size: 3563
     params:
       params.yaml:
         data_ingestion.test_size: 0.2
     outs:
     - path: data/raw
       hash: md5
-      md5: 6e30d897bc81bf932fcc4051c9901ad1.dir
-      size: 61348738
+      md5: 5085426077e3675467e9534442d77658.dir
+      size: 61794184
       nfiles: 2
   data_preprocessing:
     cmd: python src/data/data_preprocessing.py
     deps:
     - path: data/raw/test.csv
       hash: md5
-      md5: 19e70a19954bb4f642823c9c68579757
-      size: 12295937
+      md5: c93da0c4659521bdb74f1492a354e0ad
+      size: 12385027
     - path: data/raw/train.csv
       hash: md5
-      md5: 57f4f06ff206bb9729f4001a55b632af
-      size: 49052801
+      md5: 31a01ff2c1e6ad54bf670ddfecb144be
+      size: 49409157
     - path: src/data/data_preprocessing.py
       hash: md5
-      md5: 7f125f71098b34119d13e13503a04c09
-      size: 7369
+      md5: 5e515389355ff78e3b194fb844f5bfc9
+      size: 7558
     outs:
     - path: data/interim
       hash: md5
-      md5: c5dc66024e4c3c2b763b02c20529429d.dir
-      size: 44209493
+      md5: 2a2a3ab369fd7cbc2f7b900c3c40204b.dir
+      size: 44668884
       nfiles: 2
   model_building:
     cmd: python src/model/model_building.py
     deps:
     - path: data/interim/train_processed.csv
       hash: md5
-      md5: 356e7536785cf9e98f76cc2a8654ae18
-      size: 35354521
+      md5: f83132191cd9e0d99cfb8c7a039f1d97
+      size: 35722053
     - path: src/model/model_building.py
       hash: md5
-      md5: cee259b2fe8432a1a77d4cbe7bd7211c
-      size: 4568
+      md5: e181b8c5dad15d86e3d274f88322d9df
+      size: 4700
     params:
       params.yaml:
         model_building.best_params:
@@ -65,33 +65,39 @@ stages:
     outs:
     - path: lgbm_model.pkl
       hash: md5
-      md5: 4f1185b5c487bfb2f07d65ab6ed73c29
-      size: 2348198
+      md5: db312c85ab0b2deac45b6986305834a2
+      size: 2371037
     - path: tfidf_vectorizer.pkl
       hash: md5
+<<<<<<< HEAD
       md5: 822f13fd8e9aae7ca5d7915963a4902f
       size: 118076
+=======
+      md5: 57aa1a1b401e90027d111778c1bbea82
+      size: 118099
+>>>>>>> 98392a7 (igiu)
   model_evaluation:
     cmd: python src/model/model_evaluation.py
     deps:
     - path: data/interim/test_processed.csv
       hash: md5
-      md5: 37b67b97da7348a9412b6939d10dc43a
-      size: 8854972
+      md5: 148d3a005b20c55c4816350e7c248a51
+      size: 8946831
     - path: data/interim/train_processed.csv
       hash: md5
-      md5: 356e7536785cf9e98f76cc2a8654ae18
-      size: 35354521
+      md5: f83132191cd9e0d99cfb8c7a039f1d97
+      size: 35722053
     - path: lgbm_model.pkl
       hash: md5
-      md5: 4f1185b5c487bfb2f07d65ab6ed73c29
-      size: 2348198
+      md5: db312c85ab0b2deac45b6986305834a2
+      size: 2371037
     - path: src/model/model_evaluation.py
       hash: md5
-      md5: 11572a578946bc4e97b9427a3c743a02
-      size: 6744
+      md5: d3dc7e9a7fee44f82c8eaed66ba3243b
+      size: 7005
     - path: tfidf_vectorizer.pkl
       hash: md5
+<<<<<<< HEAD
       md5: 822f13fd8e9aae7ca5d7915963a4902f
       size: 118076
     outs:
@@ -99,14 +105,28 @@ stages:
       hash: md5
       md5: 73f6ed9648ca911ffadd1908bee512da
       size: 84
+=======
+      md5: 57aa1a1b401e90027d111778c1bbea82
+      size: 118099
+    outs:
+    - path: experiment_info.json
+      hash: md5
+      md5: 15127b6becb753616ae612c092cdd414
+      size: 87
+>>>>>>> 98392a7 (igiu)
   model_registration:
     cmd: python src/model/register_model.py
     deps:
     - path: experiment_info.json
       hash: md5
+<<<<<<< HEAD
       md5: 73f6ed9648ca911ffadd1908bee512da
       size: 84
+=======
+      md5: 15127b6becb753616ae612c092cdd414
+      size: 87
+>>>>>>> 98392a7 (igiu)
     - path: src/model/register_model.py
       hash: md5
-      md5: 0dd1917451141ed6ed256c441fff560e
-      size: 2365
+      md5: 98f86e5695107a7ebae13d42806c70c7
+      size: 2439
