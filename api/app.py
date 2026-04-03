@@ -24,7 +24,7 @@ app = FastAPI(title="Brand pulse")
 
 # -------------------- NLP GLOBAL OBJECTS --------------------
 SENTIMENT_WORDS = {
-    'not', 'no', 'nor', 'neither', 'never', 'none',
+    'not', 'no', 'nor', 'neither', 'never', 'none', 
     'but', 'however', 'although', 'though', 'yet', 'still',
     'very', 'extremely', 'absolutely', 'completely', 'totally',
     'quite', 'rather', 'somewhat', 'slightly', 'fairly',
@@ -39,26 +39,27 @@ LEMMATIZER = WordNetLemmatizer()
 
 # -------------------- PREPROCESSING --------------------
 def preprocess_comment(comment: str) -> str:
+    """MATCHES TRAINING PREPROCESSING EXACTLY"""
     if not isinstance(comment, str) or not comment.strip():
         return ""
 
+    # Clean noise (URLs and HTML)
     comment = re.sub(r'https?://\S+|www\.\S+', '', comment)
     comment = re.sub(r'&[a-z]+;', '', comment)
     comment = comment.lower()
+    # Keep the same punctuation you used in training!
     comment = re.sub(r'[^a-z0-9\s!?.,]', '', comment)
 
     words = comment.split()
     final_words = []
     for word in words:
-        # Remove stopwords (unless they are sentiment-rich)
+        # Match your training variable names (STOP_WORDS vs stop_words)
         if word in SENTIMENT_WORDS or word not in STOP_WORDS:
-            # Lemmatize to get the root word
             root_word = LEMMATIZER.lemmatize(word)
-
-            # Keep words that are meaningful or at least 2 chars long
+            # Match the 2-character rule from training
             if len(root_word) >= 2 or root_word in {'no', 'ok'}:
-                    final_words.append(root_word)
-        
+                final_words.append(root_word)
+
     return ' '.join(final_words).strip()
 
 
@@ -67,14 +68,18 @@ def load_model_and_vectorizer():
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     client = MlflowClient()
 
-    versions = client.get_latest_versions(MODEL_NAME)
+    # Get the specific run_id of the LATEST version
+    versions = client.get_latest_versions(MODEL_NAME, stages=["Staging", "None"])
     if not versions:
         raise RuntimeError("No model versions found in MLflow")
-
+    
+    # Grab the run_id from the actual registered model
     run_id = versions[0].run_id
+    print(f"LOADING ASSETS FROM RUN: {run_id}")
 
-    model = mlflow.sklearn.load_model(f"models:/{MODEL_NAME}/latest")
-
+    # Load both using the SAME RUN ID to ensure they match
+    model = mlflow.sklearn.load_model(f"runs:/{run_id}/lgbm_model")
+    
     vectorizer_path = mlflow.artifacts.download_artifacts(
         run_id=run_id,
         artifact_path="tfidf_vectorizer.pkl"
@@ -114,32 +119,34 @@ async def predict(payload: PredictRequest):
     # Preprocess comments
     processed = []
     valid_indices = []
-    for i, c in enumerate(comments):
+    for i, c in enumerate(payload.comments):
         p = preprocess_comment(c)
         if p:
             processed.append(p)
             valid_indices.append(i)
 
-    if not processed:
-        raise HTTPException(400, "No valid comments after preprocessing")
-
     try:
-        # Transform features directly into sparse matrix
-        features = vectorizer.transform(processed) # keeps it sparse
+        features = vectorizer.transform(processed)
+        
+        # DEBUG: See what the model actually sees!
+        # If this is empty, your vectorizer is the wrong version.
+        print(f"WORDS RECOGNIZED: {vectorizer.inverse_transform(features)}")
+
         probs = model.predict_proba(features)
-        # Predict
         pos_probs = probs[:, 1]
+        
         final_preds = []
         for p in pos_probs:
-            if p > 0.58:
-                final_preds.append(1) # Positive
-            elif p < 0.42:
-                final_preds.append(0) # Negative
+            # Tuned thresholds for 95% model
+            if p > 0.60:
+                final_preds.append(1)
+            elif p < 0.45:
+                final_preds.append(0)
             else:
-                final_preds.append(2) # Neutral (Unsure)
+                final_preds.append(2)
 
         return PredictResponse(predictions=final_preds, indices=valid_indices)
-
+    
     except Exception as e:
         raise HTTPException(500, f"Prediction failed: {str(e)}")
 
