@@ -45,23 +45,21 @@ def preprocess_comment(comment: str) -> str:
     comment = re.sub(r'https?://\S+|www\.\S+', '', comment)
     comment = re.sub(r'&[a-z]+;', '', comment)
     comment = comment.lower()
-    comment = re.sub(r'\n+', ' ', comment)
-    comment = re.sub(r'\s+', ' ', comment)
     comment = re.sub(r'[^a-z0-9\s!?.,]', '', comment)
 
     words = comment.split()
-    words = [
-        w for w in words
-        if w in SENTIMENT_WORDS or w not in STOP_WORDS
-    ]
+    final_words = []
+    for word in words:
+        # Remove stopwords (unless they are sentiment-rich)
+        if word in SENTIMENT_WORDS or word not in STOP_WORDS:
+            # Lemmatize to get the root word
+            root_word = LEMMATIZER.lemmatize(word)
 
-    words = [
-        LEMMATIZER.lemmatize(w)
-        for w in words
-        if len(w) >= 2 or w in {"no", "ok"}
-    ]
-
-    return " ".join(words).strip()
+            # Keep words that are meaningful or at least 2 chars long
+            if len(root_word) >= 2 or root_word in {'no', 'ok'}:
+                    final_words.append(root_word)
+        
+    return ' '.join(final_words).strip()
 
 
 # -------------------- MODEL + VECTORIZER LOADING --------------------
@@ -75,7 +73,7 @@ def load_model_and_vectorizer():
 
     run_id = versions[0].run_id
 
-    model = mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}/latest")
+    model = mlflow.sklearn.load_model(f"models:/{MODEL_NAME}/latest")
 
     vectorizer_path = mlflow.artifacts.download_artifacts(
         run_id=run_id,
@@ -127,14 +125,20 @@ async def predict(payload: PredictRequest):
 
     try:
         # Transform features directly into sparse matrix
-        features = vectorizer.transform(processed)  # keeps it sparse
-
+        features = vectorizer.transform(processed) # keeps it sparse
+        probs = model.predict_proba(features)
         # Predict
-        preds = model.predict(features)
-        if preds.ndim > 1:
-            preds = preds.argmax(axis=1)
+        pos_probs = probs[:, 1]
+        final_preds = []
+        for p in pos_probs:
+            if p > 0.58:
+                final_preds.append(1) # Positive
+            elif p < 0.42:
+                final_preds.append(0) # Negative
+            else:
+                final_preds.append(2) # Neutral (Unsure)
 
-        return PredictResponse(predictions=preds.tolist(), indices=valid_indices)
+        return PredictResponse(predictions=final_preds, indices=valid_indices)
 
     except Exception as e:
         raise HTTPException(500, f"Prediction failed: {str(e)}")

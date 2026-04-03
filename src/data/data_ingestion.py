@@ -77,8 +77,9 @@ def main():
         
         # Load data from the specified URL
         df = load_data(data_url='https://github.com/realayushman/Training-Data/raw/refs/heads/main/sentiment_api_data/FDS_data_V1.csv')
+        df = df[df.rating != 3]
         df['rating'] = (df['rating'] > 3).astype(int)
-        
+
         # Split the data into training and testing sets
         train_data, test_data = train_test_split(df, test_size=test_size, random_state=42)
         
