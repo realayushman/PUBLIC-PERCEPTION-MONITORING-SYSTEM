@@ -126,7 +126,7 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
         raise
 
 def main():
-    mlflow.set_tracking_uri("http://56.228.9.221:8000/")
+    mlflow.set_tracking_uri("http://13.49.223.143:8000/")
 
     mlflow.set_experiment('dvc-pipeline-runs')
     
@@ -148,8 +148,8 @@ def main():
             test_data = load_data(os.path.join(root_dir, 'data/interim/test_processed.csv'))
 
             # Prepare test data
-            X_test_tfidf = vectorizer.transform(test_data['clean_comment'].values)
-            y_test = test_data['category'].values
+            X_test_tfidf = vectorizer.transform(test_data['review_description'].values)
+            y_test = test_data['rating'].values
 
             # Log model WITHOUT signature
             mlflow.sklearn.log_model(
@@ -168,13 +168,17 @@ def main():
             report, cm = evaluate_model(model, X_test_tfidf, y_test)
 
             # Log classification report metrics for the test data
-            for label, metrics in report.items():
-                if isinstance(metrics, dict):
+            for name, value in report.items():
+                if isinstance(value, dict):
+                    # This logs Precision, Recall, and F1 for each category
                     mlflow.log_metrics({
-                        f"test_{label}_precision": metrics['precision'],
-                        f"test_{label}_recall": metrics['recall'],
-                        f"test_{label}_f1-score": metrics['f1-score']
+                        f"test_{name}_precision": value['precision'],
+                        f"test_{name}_recall": value['recall'],
+                        f"test_{name}_f1": value['f1-score']
                     })
+                else:
+                    # This logs the overall "accuracy" score
+                    mlflow.log_metric(f"test_{name}", value)
 
             # Log confusion matrix
             log_confusion_matrix(cm, "Test Data")

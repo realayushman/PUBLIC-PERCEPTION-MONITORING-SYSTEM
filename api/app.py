@@ -13,13 +13,13 @@ from mlflow.tracking import MlflowClient
 import pandas as pd
 
 # -------------------- HARD-CODED CONFIG --------------------
-MLFLOW_TRACKING_URI = "http://56.228.9.221:8000/"
+MLFLOW_TRACKING_URI = "http://13.49.223.143:8000/"
 MODEL_NAME = "yt_chrome_plugin_model"
 MAX_BATCH_SIZE = 1000
 
 
 # -------------------- FASTAPI INIT --------------------
-app = FastAPI(title="Sentiment Prediction API")
+app = FastAPI(title="Brand pulse")
 
 
 # -------------------- NLP GLOBAL OBJECTS --------------------

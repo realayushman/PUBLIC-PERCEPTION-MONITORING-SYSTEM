@@ -31,6 +31,18 @@ logger.addHandler(file_handler)
 nltk.download('wordnet', quiet=True)  # Added quiet=True
 nltk.download('stopwords', quiet=True)  # Added quiet=True
 
+lemmatizer = WordNetLemmatizer()
+SENTIMENT_WORDS = {
+    'not', 'no', 'nor', 'neither', 'never', 'none', 
+    'but', 'however', 'although', 'though', 'yet', 'still',
+    'very', 'extremely', 'absolutely', 'completely', 'totally',
+    'quite', 'rather', 'somewhat', 'slightly', 'fairly',
+    'good', 'bad', 'great', 'terrible', 'awesome', 'awful',
+    'love', 'hate', 'like', 'dislike', 'amazing', 'horrible',
+    'best', 'worst', 'better', 'worse', 'excellent', 'poor'
+}
+stop_words = set(stopwords.words('english')) - SENTIMENT_WORDS
+
 # Define the preprocessing function - SAME NAME, IMPROVED LOGIC
 def preprocess_comment(comment):
     """Apply preprocessing transformations to a comment."""
@@ -38,77 +50,27 @@ def preprocess_comment(comment):
         # Early return for empty or invalid comments
         if not isinstance(comment, str) or not comment.strip():
             return ""
-        
-        original_comment = comment
-        
-        # 1. Remove URLs (common in Reddit comments)
+
         comment = re.sub(r'https?://\S+|www\.\S+', '', comment)
-        
-        # 2. Remove HTML entities
         comment = re.sub(r'&[a-z]+;', '', comment)
-        
-        # 3. Convert to lowercase
         comment = comment.lower()
-        
-        # 4. Remove trailing and leading whitespaces
-        comment = comment.strip()
-        
-        # 5. Remove newline characters and multiple spaces
-        comment = re.sub(r'\n+', ' ', comment)
-        comment = re.sub(r'\s+', ' ', comment)
-        
-        # 6. Remove special characters but keep basic punctuation for sentiment
-        # Keep: letters, numbers, basic punctuation (! ? , .) and spaces
         comment = re.sub(r'[^a-z0-9\s!?.,]', '', comment)
         
-        # 7. Tokenize before stopword removal for better handling
         words = comment.split()
-        
-        # 8. Remove stopwords but retain important ones for sentiment analysis
-        # Expanded list of sentiment-bearing words to keep
-        sentiment_words = {
-            'not', 'no', 'nor', 'neither', 'never', 'none', 
-            'but', 'however', 'although', 'though', 'yet', 'still',
-            'very', 'extremely', 'absolutely', 'completely', 'totally',
-            'quite', 'rather', 'somewhat', 'slightly', 'fairly',
-            'good', 'bad', 'great', 'terrible', 'awesome', 'awful',
-            'love', 'hate', 'like', 'dislike', 'amazing', 'horrible',
-            'best', 'worst', 'better', 'worse', 'excellent', 'poor'
-        }
-        
-        stop_words = set(stopwords.words('english')) - sentiment_words
-        
-        # Filter words: keep if not in stopwords or if it's a sentiment word
-        filtered_words = []
-        for word in words:
-            if word in sentiment_words or word not in stop_words:
-                filtered_words.append(word)
-        
-        # 9. Lemmatize the words (more accurate than stemming for sentiment)
-        lemmatizer = WordNetLemmatizer()
-        lemmatized_words = []
-        
-        for word in filtered_words:
-            # Try to lemmatize, fallback to original word if error
-            try:
-                lemmatized_words.append(lemmatizer.lemmatize(word))
-            except:
-                lemmatized_words.append(word)
-        
-        # 10. Remove very short words (likely noise) but keep negation words
+  
         final_words = []
-        for word in lemmatized_words:
-            if len(word) >= 2 or word in {'no', 'ok'}:
-                final_words.append(word)
+        for word in words:
+            # Remove stopwords (unless they are sentiment-rich)
+            if word in SENTIMENT_WORDS or word not in stop_words:
+                # Lemmatize to get the root word
+                root_word = lemmatizer.lemmatize(word)
+                
+                # Keep words that are meaningful or at least 2 chars long
+                if len(root_word) >= 2 or root_word in {'no', 'ok'}:
+                    final_words.append(root_word)
         
-        result = ' '.join(final_words).strip()
-        
-        # Log if processing removed too much (debug info)
-        if len(original_comment.split()) > 5 and len(result.split()) <= 1:
-            logger.debug(f"Heavy reduction: '{original_comment[:50]}...' -> '{result}'")
-        
-        return result
-        
+        return ' '.join(final_words).strip()
+    
     except Exception as e:
         logger.error(f"Error in preprocessing comment: {e}")
         # Return original comment as fallback (same as before)
@@ -117,22 +79,24 @@ def preprocess_comment(comment):
 def normalize_text(df):
     """Apply preprocessing to the text data in the dataframe."""
     try:
+
         # Check if column exists
-        if 'clean_comment' not in df.columns:
-            logger.error("Column 'clean_comment' not found in dataframe")
-            raise ValueError("Column 'clean_comment' not found")
+        if 'review_description' not in df.columns:
+            logger.error("Column 'review_description' not found in dataframe")
+            raise ValueError("Column 'review_description' not found")
         
         # Get initial stats for logging
         initial_count = len(df)
-        initial_non_empty = df['clean_comment'].astype(str).str.strip().ne('').sum()
+        initial_non_empty = df['review_description'].astype(str).str.strip().ne('').sum()
         
         logger.debug(f'Starting text normalization on {initial_count} rows')
         
         # Apply preprocessing with error handling per row
-        df['clean_comment'] = df['clean_comment'].apply(preprocess_comment)
-        
+        df['review_description'] = df['review_description'].apply(preprocess_comment)
+        df.dropna(inplace = True)
+        df = df[df.review_description != ""]
         # Get final stats
-        final_non_empty = df['clean_comment'].str.strip().ne('').sum()
+        final_non_empty = df['review_description'].str.strip().ne('').sum()
         removed_count = initial_non_empty - final_non_empty
         
         logger.debug(f'Text normalization completed')
@@ -194,7 +158,7 @@ def main():
         logger.debug(f'Test data loaded: {test_data.shape}')
         
         # Check for required columns
-        required_columns = ['clean_comment']
+        required_columns = ['review_description']
         for col in required_columns:
             if col not in train_data.columns:
                 logger.error(f"Required column '{col}' missing in train data")

@@ -52,26 +52,6 @@ def load_data(data_url: str) -> pd.DataFrame:
         logger.error('Unexpected error occurred while loading the data: %s', e)
         raise
 
-def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
-    """Preprocess the data by handling missing values, duplicates, and empty strings."""
-    try:
-        # Removing missing values
-        df = df.replace({-1:0, 0:1, 1:2})
-        df.dropna(inplace=True)
-        # Removing duplicates
-        df.drop_duplicates(inplace=True)
-        # Removing rows with empty strings
-        df = df[df['clean_comment'].str.strip() != '']
-        
-        logger.debug('Data preprocessing completed: Missing values, duplicates, and empty strings removed.')
-        return df
-    except KeyError as e:
-        logger.error('Missing column in the dataframe: %s', e)
-        raise
-    except Exception as e:
-        logger.error('Unexpected error during preprocessing: %s', e)
-        raise
-
 def save_data(train_data: pd.DataFrame, test_data: pd.DataFrame, data_path: str) -> None:
     """Save the train and test datasets, creating the raw folder if it doesn't exist."""
     try:
@@ -96,13 +76,11 @@ def main():
         test_size = params['data_ingestion']['test_size']
         
         # Load data from the specified URL
-        df = load_data(data_url='https://raw.githubusercontent.com/Himanshu-1703/reddit-sentiment-analysis/refs/heads/main/data/reddit.csv')
-        
-        # Preprocess the data
-        final_df = preprocess_data(df)
+        df = load_data(data_url='https://github.com/realayushman/Training-Data/raw/refs/heads/main/sentiment_api_data/FDS_data_V1.csv')
+        df['rating'] = (df['rating'] > 3).astype(int)
         
         # Split the data into training and testing sets
-        train_data, test_data = train_test_split(final_df, test_size=test_size, random_state=42)
+        train_data, test_data = train_test_split(df, test_size=test_size, random_state=42)
         
         # Save the split datasets and create the raw folder if it doesn't exist
         save_data(train_data, test_data, data_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../data'))

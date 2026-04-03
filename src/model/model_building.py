@@ -6,7 +6,7 @@ import os
 import pickle
 import yaml
 import logging
-import lightgbm as lgb
+from lightgbm import LGBMClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # logging configuration
@@ -65,8 +65,8 @@ def apply_tfidf(train_data: pd.DataFrame, max_features: int, ngram_range: tuple)
     try:
         vectorizer = TfidfVectorizer(max_features=max_features, ngram_range=ngram_range)
 
-        X_train = train_data['clean_comment'].values
-        y_train = train_data['category'].values
+        X_train = train_data['review_description'].values
+        y_train = train_data['rating'].values
 
         # Perform TF-IDF transformation
         X_train_tfidf = vectorizer.fit_transform(X_train)
@@ -81,57 +81,6 @@ def apply_tfidf(train_data: pd.DataFrame, max_features: int, ngram_range: tuple)
         return X_train_tfidf, y_train
     except Exception as e:
         logger.error('Error during TF-IDF transformation: %s', e)
-        raise
-
-
-def train_lgbm(
-    X_train,
-    y_train,
-    learning_rate: float,
-    max_depth: int,
-    n_estimators: int,
-    min_data_in_leaf: int,
-    lambda_l1: float,
-    lambda_l2: float,
-    min_gain_to_split: float,
-    feature_fraction: float,
-    bagging_fraction: float,
-    bagging_freq: int
-):
-    try:
-        params = {
-            "objective": "multiclass",
-            "num_class": 3,
-            "metric": "multi_logloss",
-
-            "learning_rate": learning_rate,
-            "max_depth": max_depth,
-            "min_data_in_leaf": min_data_in_leaf,
-
-            "lambda_l1": lambda_l1,
-            "lambda_l2": lambda_l2,
-            "min_gain_to_split": min_gain_to_split,
-
-            "feature_fraction": feature_fraction,
-            "bagging_fraction": bagging_fraction,
-            "bagging_freq": bagging_freq,
-
-            "verbosity": -1
-        }
-
-        train_data = lgb.Dataset(X_train, label=y_train)
-
-        model = lgb.train(
-            params=params,
-            train_set=train_data,
-            num_boost_round=n_estimators
-        )
-
-        logger.debug("LightGBM model training completed")
-        return model
-
-    except Exception as e:
-        logger.error("Error during LightGBM model training: %s", e)
         raise
 
 def save_model(model, file_path: str) -> None:
@@ -160,17 +109,7 @@ def main():
         params = load_params(os.path.join(root_dir, 'params.yaml'))
         max_features = params['model_building']['max_features']
         ngram_range = tuple(params['model_building']['ngram_range'])
-
-        learning_rate = params['model_building']['learning_rate']
-        max_depth = params['model_building']['max_depth']
-        n_estimators = params['model_building']['n_estimators']
-        min_data_in_leaf = params['model_building']['min_data_in_leaf']
-        lambda_l1 = params['model_building']['lambda_l1']
-        lambda_l2 = params['model_building']['lambda_l2']
-        min_gain_to_split = params['model_building']['min_gain_to_split']
-        feature_fraction = params['model_building']['feature_fraction']
-        bagging_fraction = params['model_building']['bagging_fraction']
-        bagging_freq = params['model_building']['bagging_freq']
+        best_params = params['model_building']['best_params']
 
         # Load the preprocessed training data from the interim directory
         train_data = load_data(os.path.join(root_dir, 'data/interim/train_processed.csv'))
@@ -178,8 +117,9 @@ def main():
         # Apply TF-IDF feature engineering on training data
         X_train_tfidf, y_train = apply_tfidf(train_data, max_features, ngram_range)
 
+        final_model = LGBMClassifier(**best_params)
         # Train the LightGBM model using hyperparameters from params.yaml
-        best_model = train_lgbm(X_train_tfidf, y_train, learning_rate, max_depth, n_estimators, min_data_in_leaf, lambda_l1, lambda_l2, min_gain_to_split, feature_fraction, bagging_fraction, bagging_freq)
+        best_model = final_model.fit(X_train_tfidf, y_train)
 
         # Save the trained model in the root directory
         save_model(best_model, os.path.join(root_dir, 'lgbm_model.pkl'))
