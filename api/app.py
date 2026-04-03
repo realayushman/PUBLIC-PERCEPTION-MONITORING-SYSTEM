@@ -3,7 +3,6 @@ import joblib
 import mlflow
 import numpy as np
 from typing import List
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
